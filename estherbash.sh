@@ -38,8 +38,53 @@ menu(){
         sleep 5
       ;;
       2)
+        read -p "Dame la ip: " ip
+        read -p "Dame la mascara: " masc
+        read -p "Dame la puerta de enlace: " enlace
+        read -p "Dame el dns: " dns
+        cat > /etc/netplan/50-cloud-init.yaml <<EOF
+        network:
+          version: 2
+          renderer: NetworkManager
+          ethernets:
+            enp0s3:
+              addresses: [$ip/$masc]
+              routes:
+                - to: default
+                  via: $enlace
+              nameservers:
+                addresses: [$dns]
+EOF
+        cat /etc/netplan/50-cloud-init.yaml
+        sleep 5
       ;;
       3)
+        aleatorio=$(( RANDOM % 101 ))
+        max_intentos=5
+        intentos=5
+        total=1
+        for ((i=1; i<=max_intentos;i++)); do
+          echo "El número de intentos que tienes ahora es $intentos"
+          read -p "Adivina el número: " numusu
+          if [ $numusu -eq $aleatorio ]; then
+            echo "Has acertado campeon, yeray te aprueba!!"
+            break
+          elif [ $numusu -lt $aleatorio ]; then
+            echo "El número es mayor"
+            let intentos=$intentos-1
+            let total=$total+1
+          else
+            echo "El número es menor"
+            let intentos=$intentos-1
+            let total=$total+1
+          fi
+        done
+          if [ $numusu -eq $aleatorio ]; then
+            echo "El numero de intentos que has realizado es $total"
+          else
+            echo "Ya no te quedan intentos, el numero era el $aleatorio"
+          fi
+        sleep 5 
       ;;
       4)
       ;;
