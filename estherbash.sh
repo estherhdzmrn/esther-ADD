@@ -87,6 +87,16 @@ EOF
         sleep 5 
       ;;
       4)
+        # Buscar
+        # Este script te ayudará a buscar un fichero
+        read -p "Dame el nombre de un fichero a buscar: " fichero
+        buscar=$(sudo find / -name "$fichero")
+          if [ -n "$buscar" ]; then
+            vocales=$(grep -o -i '[aeiou]' $buscar | wc -l)
+            echo "La ubicación es $buscar y tiene $vocales vocales"
+          else
+            echo "No se encontró el fichero"
+          fi
       ;;
       5)
       ;;
