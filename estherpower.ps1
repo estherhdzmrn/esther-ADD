@@ -46,11 +46,11 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
             }        
         17 { 
                 Write-Host "Calcular el número de días pares e impares que hay en un año bisiesto: "
-                $longitudes = 31,29,31,30,31,30,31,31,30,31,30,31
+                $meses = 31,29,31,30,31,30,31,31,30,31,30,31
                 $pares = 0
                 $impares = 0
-                foreach ($diasEnMes in $longitudes) {
-                    for ($dia = 1; $dia -le $diasEnMes; $dia++) {
+                foreach ($diasMes in $meses) {
+                    for ($dia = 1; $dia -le $diasMes; $dia++) {
                         if ($dia % 2 -eq 0) { 
                         $pares++ 
                         } else { 
@@ -63,18 +63,14 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
          }
 
         18 {
-            function menu_usuarios {
-                Write-Host "***************"
+                Write-Host "******************"
                 Write-Host "Menú para usuarios"
                 Write-Host "1. Listar"
                 Write-Host "2. Crear"
                 Write-Host "3. Eliminar"
                 Write-Host "4. Modificar"
                 Write-Host "0. Salir"
-                Write-Host "***************"
-                }
-
-                menu_usuarios
+                Write-Host "******************"
 
                 while (($opcion = Read-Host "Elige una opción del 1-4, 0 para salir") -ne 0) {
                     switch ($opcion) {
@@ -88,31 +84,92 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
                         2 {
                         $usuario = Read-Host "Dame un usuario"
                         $password = Read-Host "Dame una contraseña de 7 caracteres" -AsSecureString
-                        $crearusu = new-localUser -name $usuario -Password $password
+                        new-localUser -name $usuario -Password $password
                         Write-Host "Has creado el usuario $usuario"
                         }
                         3 {
                         $eliminarusu = Read-Host "Dime un usuario para eliminarlo"
-                        $eliminar = remove-localUser $eliminarusu
+                        remove-localUser $eliminarusu
                         Write-Host "Has eliminado a $eliminarusu"
                         }
 
                         4 {
                         $modificarusu = Read-Host "Dime el usuario para modificar"
                         $nombre = Read-Host "Dime el nuevo nombre"
-                        $modificar = Rename-LocalUser -name $modificarusu -NewName $nombre
+                        Rename-LocalUser -name $modificarusu -NewName $nombre
                         Write-Host "Has modificado el nombre de $modificarusu por $nombre"
                         }
                     }
                 }
-                menu_usuarios
         }
 
-        19 { 
+        19 {
+            Write-Host "********************************"
+            Write-Host "        Menú para grupos"
+            Write-Host "1. Listar grupos y miembros"
+            Write-Host "2. Crear grupo"
+            Write-Host "3. Eliminar grupo"
+            Write-Host "4. Crea miembro de un grupo"
+            Write-Host "5. Elimina miembro de un grupo"
+            Write-Host "0. Salir"
+            Write-Host "********************************"
+
+            while (($opcion = Read-Host "Elige una opción del 1-5, 0 para salir") -ne 0) {
+
+                switch ($opcion) {
+                    1 {
+                       $listar = Get-ADGroup -Filter * | Select-Object -ExpandProperty Name
+                        foreach ($grp in $listar) {
+                            Write-Host "Grupo: $grp"
+                            $miembro = get-ADgroupMember -Identity "$grp" | Select-Object -ExpandProperty Name
+                            Write-Host "- $miembro"
+                        }
+
+                    }
+
+                    2 {
+                        $nombregrp = Read-Host "Dime el nombre del grupo que quieres crear"
+                        New-ADGroup -name $nombregrp -GroupScope Global
+                        Write-Host "Tu grupo $nombregrp ha sido creado"
+                    }
+
+                    3 {
+                       $eliminar = Read-Host "Dime el nombre del grupo a eliminar"
+                       remove-ADgroup $eliminar
+                       Write-Host "Has borrado el grupo $eliminar"
+                    }
+
+                    4{
+                       $miembro = Read-Host "Dime el miembro que quieres añadir a un grupo"
+                       $grp = Read-Host "Dime el grupo al que quieres añadir el miembro anterior"
+                       Add-ADGroupMember -Identity $grp -Members $miembro
+                       Write-Host "Has añadido a $miembro en $grp"
+                    }
+
+                    5 {
+                       $usu = Read-host "Dame el miembro que quieres borrar de un grupo"
+                       $grp = Read-Host "Dame el grupo del miembro que quieres borrar"
+                       Remove-ADGroupMember -Identity $grp -Members $usu
+                       Write-Host "Has borrado el miembro $usu del grupo $grp"
+                    }
+                }          
+            } 
 
         }
         20 { 
-        
+            Get-Disk
+            $disc = Read-Host "Dime el número de disco a utilizar"
+            $GB = [math]::Round((Get-Disk -Number $disc).Size / 1GB, 2)
+            Write-Host "El tamaño del disco es de $GB GB"
+
+            $ruta   = "$env:TEMP\diskpart_script.txt"
+    
+            "select disk $disc" | Out-File -FilePath "$ruta" -Encoding ASCII
+            "clean" | Out-File -FilePath "$ruta" -Append -Encoding ASCII
+
+            Start-Process -FilePath "diskpart.exe" -ArgumentList "/s `"$ruta`"" `
+            -NoNewWindow -Wait 
+            Write-Host "El disco $disc ha sido borrado"
         }
         21 { 
         
@@ -145,7 +202,6 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
         
         }
         0  { 
-            Write-Host "Hola"
         }
     }
 }
