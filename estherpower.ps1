@@ -157,31 +157,112 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
 
         }
         20 { 
-            Get-Disk
-            $disc = Read-Host "Dime el número de disco a utilizar"
-            $GB = [math]::Round((Get-Disk -Number $disc).Size / 1GB, 2)
-            Write-Host "El tamaño del disco es de $GB GB"
-
-            $ruta   = "$env:TEMP\diskpart_script.txt"
-    
-            "select disk $disc" | Out-File -FilePath "$ruta" -Encoding ASCII
-            "clean" | Out-File -FilePath "$ruta" -Append -Encoding ASCII
-
-            Start-Process -FilePath "diskpart.exe" -ArgumentList "/s `"$ruta`"" `
-            -NoNewWindow -Wait 
-            Write-Host "El disco $disc ha sido borrado"
+            function diskpart {
+            ﻿# Solicitamos el número de disco
+            $numdisk = Read-Host "¿Qué disco quiere utilizar?"
+            
+            #Obtenemos el tamaño del disco pedido en GB
+            $tamdisk = (Get-Disk -Number $numdisk | Select-Object Size).Size /1GB
+            Write-Host "El tamaño del disco $numdisk es de $tamdisk GB."
+            
+            #Abrimos el diskpart, limpiamos el disco seleccionado y lo convertimos en dinámico y gpt.
+@"
+            sel disk $numdisk
+            clean
+            conv gpt
+            con dyn
+"@ | diskpart
+            
+            #Creamos particiones de 1GB hasta limitar su espacio.
+            $letra = 'D'
+            $numvol = 0
+            for ($espacdisk = 1; $espacdisk -le $tamdisk; $espacdisk++) {
+            $letra = [char]([int]$letra[0] + 1)
+            $numvol++
+@"
+            sel disk $numdisk
+            create volume simple size=1022
+            format fs='NTFS' label='Volumen $numvol' 'quick'
+            assign letter $letra
+"@ | diskpart
+            }
         }
         21 { 
+            $contrasena_seg = Read-Host "Dime una contraseña" -AsSecureString
+            $contrasena = [System.net.NetworkCredential]::new("",$contrasena_seg).Password
         
+            if ($contrasena.Length -lt 8){
+            return $false
+            }
+            
+            if ($contrasena -notmatch '[a-z]'){
+            return $false
+            }
+            if ($contrasena -notmatch '[A-Z]'){
+            return $false
+            }
+            if ($contrasena -notmatch '\d'){
+            return $false 
+            }
+            if ($contrasena -notmatch '[^a-zA-Z0-9]'){
+            return $false9
+            }
+            return $true
+            
+            if( validar $contrasena){
+            Write-Host ""
+            Write-Host "contraseña valida"
+            }
+            else{
+            Write-Host ""
+            Write-Host "Contraseña no valida"
+            }
         }
         22 { 
+            #Ponemos los dos primeros numeros de fibonacci
+            $n1 = 0
+            $n2 = 1
+            #El usuario decide cuantos numero quiere imprimir
+            $veces = Read-Host "Dime cuantas veces"
         
+            Write-Host "Secuencia de Fibonacci:"
+        
+            #Ejecutamos el bucle mientras sea menor o igual a las veces haya introducido el usuario e incrementamos 
+            for ($i = 0; $i -lt $veces; $i++) {
+               #Hacemos que imprima los dos primero numero (0 y 1)
+                if ($i -lt 2) {
+                    $resultado = $i
+                } else {
+                #Calculamos el siguiente numero con una suma
+                    $resultado = $n1 + $n2
+                #Actualizamos los valores para que los numeros sean los dos ultimos usados 
+                    $n1 = $n2
+                    $n2 = $resultado
+                }
+                #Los imprimimos por pantalla todo seguido
+                Write-Host " " $resultado -NoNewLine
         }
         23 { 
-        
-        }
+            (Get-Counter '\Procesador(_Total)\% de tiempo de procesador' -SampleInterval 5 -MaxSamples 6 ).CounterSamples.CookedValue |
+            Measure-Object -Average | 
+            ForEach-Object {"Promedio de CPU: $([math]::Round($_.Average,2)) %"}
+            }
         24 { 
+            $ruta = "$env:USERPROFILE\espacio.log"
         
+            Get-PSDrive -PSProvider 'FileSystem' | ForEach-Object {
+            $total = $_.Used + $_.Free
+            if ($total -eq 0){ return }
+        
+            $porcent_libre = ($_.Free / $total) * 100
+            $GB = $_.Free / 1GB
+        
+            Write-Host "La unidad $($_.Name): tiene $GB GB Libres ($porcent_libre GB)"
+        
+            if ($porcent_libre -lt 10){
+                $mensaje = "Alerta: Unidad $($_.Name) solo tiene $porcent_libre ($GB GB)"
+                $mensaje >> $ruta
+            }
         }
         25 {
         
