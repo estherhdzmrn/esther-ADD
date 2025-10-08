@@ -99,20 +99,171 @@ EOF
           fi
       ;;
       5)
+        # contar
+        #!/bin/bash
+        read -p "Introduce el directorio: " dir
+        if [ -d "$dir" ]; then
+          echo "Hay $(ls -l "$dir" | grep -c ^-) ficheros en $dir"
+        else
+          echo "El directorio no existe"
+        fi
       ;;
       6)
+        # permisosoctal
+        # Dado un objeto (ruta absoluta existente), muestra sus permisos en octal (incluyendo especiales).       
+        read -p "Introduce la ruta absoluta del archivo o directorio: " ruta  
+        # Mostrar permisos en octal
+        permisos=$(stat -c "%a" "$ruta")
+        echo "Los permisos octales de $ruta son: $permisos"
+
       ;;
       7)
+        # romano"
+        # Solicita un número del 1 al 200 y muestra su representación en números romanos (I, V, X, L, C) 
+        read -p "Introduce un número (1-200): " num
+        if [ "$num" -lt 1 ] || [ "$num" -gt 200 ]; then
+          echo "Error: el número debe estar entre 1 y 200."
+          exit 1
+        fi
+        romano=""
+        # Centenas (100–199)
+        if [ $num -ge 100 ]; then
+          centenas=$((num / 100))
+          for ((i=1; i<=centenas; i++)); do
+            romano="${romano}C"
+          done
+          num=$((num % 100))
+        fi
+        # Decenas (10–99)
+        if [ $num -ge 90 ]; then
+          romano="${romano}XC"; num=$((num-90))
+        elif [ $num -ge 50 ]; then
+          romano="${romano}L"
+          decenas=$(((num-50)/10))
+          for ((i=1; i<=decenas; i++)); do
+            romano="${romano}X"
+          done
+          num=$((num % 10))
+        elif [ $num -ge 40 ]; then
+          romano="${romano}XL"; num=$((num-40))
+        elif [ $num -ge 10 ]; then
+          decenas=$((num/10))
+          for ((i=1; i<=decenas; i++)); do
+            romano="${romano}X"
+          done
+          num=$((num % 10))
+        fi
+        # Unidades (1–9)
+        if [ $num -eq 9 ]; then
+          romano="${romano}IX"
+        elif [ $num -ge 5 ]; then
+          romano="${romano}V"
+          for ((i=6; i<=num; i++)); do
+            romano="${romano}I"
+          done
+        elif [ $num -eq 4 ]; then
+          romano="${romano}IV"
+        elif [ $num -ge 1 ]; then
+          for ((i=1; i<=num; i++)); do
+            romano="${romano}I"
+          done
+        fi
+        echo "En números romanos: $romano"
+
       ;;
       8)
+        # automatizar
+        DIR="/mnt/usuarios"
+        shopt -s nullglob
+        files=("$DIR"/*)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "listado vacío"
+          exit 0
+        fi
+        for f in "${files[@]}"; do
+          [ -f "$f" ] || continue
+          user="$(basename -- "$f")"
+          id -u "$user" >/dev/null 2>&1 || useradd -m "$user"
+          home="$(getent passwd "$user" | cut -d: -f6)"
+          [ -d "$home" ] || mkdir -p "$home"
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            mkdir -p "$home/$d"
+            chown -R "$user:$user" "$home/$d"
+          done < "$f"
+          rm -f -- "$f"
+        done
       ;;
       9)
+      # crear
+      if [ $# -eq 0 ]; then
+        nombre="fichero_vacio"
+        tamano=1024
+      elif [ $# -eq 1 ]; then
+        nombre="$1"
+        tamano=1024
+      else
+        nombre="$1"
+        tamano="$2"
+      fi      
+      truncate -s "${tamano}K" "$nombre"
+      echo "Creado el fichero $nombre con tamaño ${tamano}K"
       ;;
       10)
+        # crear_2
+        if [ $# -eq 0 ]; then
+          nombre="fichero_vacio"
+          tamano=1024
+        elif [ $# -eq 1 ]; then
+          nombre="$1"
+          tamano=1024
+        else
+          nombre="$1"
+          tamano="$2"
+        fi
+        
+        # Comprobación si el fichero ya existe
+        if [ -e "$nombre" ]; then
+          echo "El fichero '$nombre' ya existe."
+        
+          contador=1
+          encontrado=0
+        
+          while [ $contador -le 9 ]; do
+            nuevo="${nombre}${contador}"
+            if [ ! -e "$nuevo" ]; then
+              nombre="$nuevo"
+              echo "Se creará como '$nombre'."
+              encontrado=1
+              contador=10  # fuerza salida sin usar break
+            else
+              contador=$((contador+1))
+            fi
+          done
+        
+          if [ $encontrado -eq 0 ]; then
+            echo "Ya existen versiones del 1 al 9. No se creará nada."
+            creado=0
+          else
+            creado=1
+          fi
+        else
+          creado=1
+        fi
+        
+        # Crear el fichero solo si procede
+        if [ $creado -eq 1 ]; then
+          truncate -s "${tamano}K" "$nombre"
+          echo "Creado el fichero '$nombre' con tamaño ${tamano}K"
+        fi
       ;;
       11)
+      # Reescribir
+      palabra=$1
+      echo "$palabra" | tr 'aeiouAEIOU' '1234512345'
       ;;
       12)
+      
       ;;
       13)
       ;;
