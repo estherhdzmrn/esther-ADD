@@ -26,6 +26,7 @@ Write-Host " "
 while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: ") -ne 0) {
     switch ($opcion) {
         16 { 
+                # pizza
                 Write-Host "Bienvenido a la Pizzería Bella Napoli, servimos pizzas Vegetariana y Normal"
                 $pizza = Read-Host "Elija la opción Vegetariana (Pimiento/Tofu) o Normal(Peperoni/Jamón/Salmón)"
                 if ($pizza -eq "Vegetariana") {
@@ -43,8 +44,10 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
                             Write-Host "Por favor, elija Peperoni, Jamón o Salmón"
                             }
                 }
+                
             }        
         17 { 
+                # dias
                 Write-Host "Calcular el número de días pares e impares que hay en un año bisiesto: "
                 $meses = 31,29,31,30,31,30,31,31,30,31,30,31
                 $pares = 0
@@ -63,6 +66,7 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
          }
 
         18 {
+                # menu_usuarios
                 Write-Host "******************"
                 Write-Host "Menú para usuarios"
                 Write-Host "1. Listar"
@@ -104,6 +108,7 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
         }
 
         19 {
+            # menu_grupos
             Write-Host "********************************"
             Write-Host "        Menú para grupos"
             Write-Host "1. Listar grupos y miembros"
@@ -123,6 +128,7 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
                             Write-Host "Grupo: $grp"
                             $miembro = get-ADgroupMember -Identity "$grp" | Select-Object -ExpandProperty Name
                             Write-Host "- $miembro"
+                            
                         }
 
                     }
@@ -157,6 +163,7 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
 
         }
         20 { 
+            # diskp
             function diskpart {
             ﻿# Solicitamos el número de disco
             $numdisk = Read-Host "¿Qué disco quiere utilizar?"
@@ -188,6 +195,7 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
             }
         }
         21 { 
+            # contraseña
             $contrasena_seg = Read-Host "Dime una contraseña" -AsSecureString
             $contrasena = [System.net.NetworkCredential]::new("",$contrasena_seg).Password
         
@@ -218,7 +226,8 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
             Write-Host "Contraseña no valida"
             }
         }
-        22 { 
+        22 {
+            # Fibonacci
             #Ponemos los dos primeros numeros de fibonacci
             $n1 = 0
             $n2 = 1
@@ -226,7 +235,9 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
             $veces = Read-Host "Dime cuantas veces"
         
             Write-Host "Secuencia de Fibonacci:"
-        
+
+        23 { 
+            #Fibonacci_recursiva
             #Ejecutamos el bucle mientras sea menor o igual a las veces haya introducido el usuario e incrementamos 
             for ($i = 0; $i -lt $veces; $i++) {
                #Hacemos que imprima los dos primero numero (0 y 1)
@@ -242,12 +253,14 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
                 #Los imprimimos por pantalla todo seguido
                 Write-Host " " $resultado -NoNewLine
         }
-        23 { 
+        24 { 
+            # monitoreo
             (Get-Counter '\Procesador(_Total)\% de tiempo de procesador' -SampleInterval 5 -MaxSamples 6 ).CounterSamples.CookedValue |
             Measure-Object -Average | 
             ForEach-Object {"Promedio de CPU: $([math]::Round($_.Average,2)) %"}
             }
         24 { 
+            # AlertaEspacio
             $ruta = "$env:USERPROFILE\espacio.log"
         
             Get-PSDrive -PSProvider 'FileSystem' | ForEach-Object {
