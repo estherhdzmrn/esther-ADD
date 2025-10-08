@@ -259,7 +259,7 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
             Measure-Object -Average | 
             ForEach-Object {"Promedio de CPU: $([math]::Round($_.Average,2)) %"}
             }
-        24 { 
+        25 { 
             # AlertaEspacio
             $ruta = "$env:USERPROFILE\espacio.log"
         
@@ -277,25 +277,202 @@ while (($opcion = Read-Host "Elige una opción del al 16–30 ó 0 para salir: "
                 $mensaje >> $ruta
             }
         }
-        25 {
-        
-         }
         26 {
-        
+            # copiasMasivas
+            $origen = "C:\Users"
+            $destino = "C:\CopiasSeguridad"
+            New-Item -ItemType Directory -Path $destino -Force | Out-Null
+            
+            Get-ChildItem -Path $origen -Directory |
+                Where-Object { $omitir -notcontains $_.Name } |
+                ForEach-Object {
+                    $zip = Join-Path $destino ($_.Name + ".zip")
+                    Compress-Archive -Path $_.FullName -DestinationPath $zip -CompressionLevel Optimal -Force
+                }
+        }    
+
          }
-        27 { 
-        
-        }
+        27 {
+            # automatizarps
+            $dir = "C:\usuarios"
+            
+            # Si no existe, créalo y considéralo vacío
+            if (-not (Test-Path $dir)) {
+                New-Item -ItemType Directory -Path $dir -Force | Out-Null
+                Write-Host "Listado vacío (no hay documentos en $dir)."
+                return
+            }
+            
+            # Obtener documentos del directorio
+            $docs = Get-ChildItem -Path $dir -File
+            if (-not $docs) {
+                Write-Host "Listado vacío (no hay documentos en $dir)."
+                return
+            }
+            
+            foreach ($doc in $docs) {
+                $usuario = $doc.BaseName                           # nombre de usuario = nombre del documento (sin extensión)
+                $home    = Join-Path "C:\Users" $usuario
+            
+                # Crear usuario local si no existe (sin contraseña)
+                if (-not (Get-LocalUser -Name $usuario -ErrorAction SilentlyContinue)) {
+                    New-LocalUser -Name $usuario -NoPassword | Out-Null
+                }
+            
+                # Crear carpeta personal del usuario
+                New-Item -ItemType Directory -Path $home -Force | Out-Null
+            
+                # Crear las carpetas listadas en el documento (una por línea)
+                $lineas = Get-Content -Path $doc.FullName | Where-Object { $_ -and $_.Trim() -ne "" }
+                foreach ($carpeta in $lineas) {
+                    New-Item -ItemType Directory -Path (Join-Path $home $carpeta.Trim()) -Force | Out-Null
+                }
+            
+                # Borrar el documento procesado
+                Remove-Item -Path $doc.FullName -Force
+            }
+
+
+         }
         28 { 
-        
+            # barrido
+            # CONFIGURACIÓN (editar a mano)          
+            $inicio = "192.168.1.1"      # IP inicial
+            $final  = "192.168.1.254"    # IP final
+            $timeout = 1                 # tiempo de espera por ping (segundos)
+            $salida = "activos.txt"      # archivo de salida
+            
+            # convertir IPs a números (simplemente separando por puntos)
+            $ini = ($inicio.Split('.')[-1])
+            $fin = ($final.Split('.')[-1])
+            $base = ($inicio.Split('.')[0..2] -join '.')
+            
+            if (Test-Path $salida) { Remove-Item $salida }
+            
+            Write-Host "Iniciando barrido desde $inicio hasta $final..."
+            
+            $total = [int]$fin - [int]$ini + 1
+            $cont = 0
+            $activos = 0
+            
+            for ($i = [int]$ini; $i -le [int]$fin; $i++) {
+                $ip = "$base.$i"
+                $cont++
+                Write-Progress -Activity "Barrido de red" -Status "Comprobando $ip ($cont / $total)" -PercentComplete (($cont / $total)*100)
+                $ping = Test-Connection -ComputerName $ip -Count 1 -Quiet -TimeoutSeconds $timeout
+                if ($ping) {
+                    "$ip" | Out-File -Append -FilePath $salida
+                    Write-Host "-> $ip responde"
+                    $activos++
+                }
+            }
+            
+            Write-Progress -Activity "Barrido de red" -Completed
+            Write-Host ""
+            Write-Host "Barrido finalizado. Direcciones activas: $activos"
+            Write-Host "Guardadas en: $salida"        
         }
-        29 {
-        
-         }
-        30 { 
-        
+        29 { 
+            # evento
+            # Si se pasa un número como parámetro, se usa; si no, por defecto 200
+            param([int]$cantidad = 200)
+            
+            Write-Host "Extrayendo los últimos $cantidad eventos críticos o de error de System y Application..."
+            
+            # Obtener eventos de ambos registros
+            $eventosSystem = Get-EventLog -LogName System -EntryType Error, Critical -Newest $cantidad
+            $eventosApp    = Get-EventLog -LogName Application -EntryType Error, Critical -Newest $cantidad
+            
+            # Unir los resultados
+            $eventos = $eventosSystem + $eventosApp
+            
+            # Exportar a CSV
+            $archivo = "eventos.csv"
+            $eventos | Select-Object TimeGenerated, EntryType, Source, EventID, Message |
+                Export-Csv -Path $archivo -NoTypeInformation -Encoding UTF8
+            
+            Write-Host "Exportados $($eventos.Count) eventos a $archivo"
         }
-        0  { 
+        30 {
+            # agenda
+            $agenda = @{}
+        
+            while ($true) {
+                Write-Host ""
+                Write-Host "========== AGENDA =========="
+                Write-Host "[1] Añadir / Modificar"
+                Write-Host "[2] Buscar (por prefijo)"
+                Write-Host "[3] Borrar"
+                Write-Host "[4] Listar"
+                Write-Host "[0] Volver al menú anterior"
+                Write-Host "============================"
+                $op = Read-Host "Elige opción"
+        
+                switch ($op) {
+                    '1' {
+                        $nombre = (Read-Host "Nombre").Trim()
+                        if (-not $nombre) { Write-Host "Nombre vacío."; break }
+                        if ($agenda.ContainsKey($nombre)) {
+                            Write-Host "Existe: $nombre -> $($agenda[$nombre])"
+                            $resp = (Read-Host "¿Modificar teléfono? (s/n)").ToLower()
+                            if ($resp -in @('s','si','sí')) {
+                                $tel = (Read-Host "Nuevo teléfono").Trim()
+                                if ($tel) { $agenda[$nombre] = $tel; Write-Host "Actualizado." }
+                            }
+                        } else {
+                            $tel = (Read-Host "Teléfono").Trim()
+                            if ($tel) { $agenda[$nombre] = $tel; Write-Host "Añadido." }
+                        }
+                    }
+                    '2' {
+                        $pref = (Read-Host "Prefijo").Trim()
+                        $coinc = $agenda.Keys | Where-Object { $_ -like "$pref*" } | Sort-Object
+                        if ($coinc) { foreach ($n in $coinc) { "{0,-30} {1}" -f $n, $agenda[$n] | Write-Host } }
+                        else { Write-Host "Sin resultados." }
+                    }
+                    '3' {
+                        $nombre = (Read-Host "Nombre a borrar").Trim()
+                        if ($agenda.ContainsKey($nombre)) {
+                            Write-Host "Encontrado: $nombre -> $($agenda[$nombre])"
+                            $conf = (Read-Host "¿Confirmar borrado? (s/n)").ToLower()
+                            if ($conf -in @('s','si','sí')) { [void]$agenda.Remove($nombre); Write-Host "Borrado." }
+                        } else { Write-Host "No existe." }
+                    }
+                    '4' {
+                        if ($agenda.Count -eq 0) { Write-Host "Agenda vacía." }
+                        else { foreach ($n in ($agenda.Keys | Sort-Object)) { "{0,-30} {1}" -f $n, $agenda[$n] | Write-Host } }
+                    }
+                    '0' { break }
+                    default { Write-Host "Opción no válida." }
+                }
+            }
         }
-    }
+
+        31 { 
+            # limpieza
+            param(
+            [Parameter(Mandatory=$true)] [string] $Ruta,
+            [Parameter(Mandatory=$true)] [int]    $Dias,
+            [Parameter(Mandatory=$true)] [string] $Log,
+            [switch] $WhatIf
+            )
+            
+            if (-not (Test-Path -LiteralPath $Ruta -PathType Container)) {
+            Write-Error "La carpeta indicada no existe: $Ruta"
+            exit 1
+            }
+            
+            $umbral = (Get-Date).AddDays(-$Dias)
+            $archivos = Get-ChildItem -LiteralPath $Ruta -File | Where-Object { $_.LastWriteTime -lt $umbral }
+            
+            foreach ($f in $archivos) {
+            if ($WhatIf) {
+            Write-Host "Se eliminaría: $($f.FullName) (Última escritura: $($f.LastWriteTime))"
+            } else {
+            Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
+            Write-Host "Eliminado: $($f.FullName) (Última escritura: $($f.LastWriteTime))"
+            ("{0},{1},{2}" -f (Get-Date -Format s), $f.FullName, $f.Length) | Out-File -FilePath $Log -Append -Encoding UTF8
+            }
+            }
+
 }
