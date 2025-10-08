@@ -258,26 +258,37 @@ EOF
         fi
       ;;
       11)
-      # Reescribir
-      palabra=$1
-      echo "$palabra" | tr 'aeiouAEIOU' '1234512345'
-      ;;
+        # Reescribir
+        palabra=$1
+        echo "$palabra" | tr 'aeiouAEIOU' '1234512345'
+        ;;
       12)
-      # contusu"
-      usuarios=$(ls /home | wc -l)
-      echo "El sistema tiene $usuarios usuarios reales."
-      
-      ls /home
-  
-      echo ""
-      read -p "Escribe el nombre de uno de los usuarios: " user
-      mkdir -p /home/copiaseguridad
-      cp -r /home/$user /home/copiaseguridad/${user}_$(date +%Y%m%d-%H%M%S)
-      echo "Vamos a hacer una copia de seguridad de $user"
+        # contusu"
+        usuarios=$(ls /home | wc -l)
+        echo "El sistema tiene $usuarios usuarios reales."
+        
+        ls /home
+    
+        echo ""
+        read -p "Escribe el nombre de uno de los usuarios: " user
+        mkdir -p /home/copiaseguridad
+        cp -r /home/$user /home/copiaseguridad/${user}_$(date +%Y%m%d-%H%M%S)
+        echo "Vamos a hacer una copia de seguridad de $user"
       ;;
       13)
+        # quita_blancos
+        # Sustituye los espacios en blanco de los nombres de los ficheros por guiones bajos "_"
+        for f in *; do
+          # Comprobar que el nombre contiene espacios
+          if [[ "$f" == *" "* ]]; then
+            nuevo="${f// /_}"
+            mv "$f" "$nuevo"
+            echo "Renombrado: '$f' → '$nuevo'"
+          fi
+        done
       ;;
       14)
+        
       ;;
       15)
       ;;
