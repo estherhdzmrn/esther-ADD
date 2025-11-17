@@ -1,0 +1,19 @@
+#!/bin/bash
+# esthersp31-7pro
+# Lee un archivo programas.txt en el mismo directorio
+# y desinstala cada programa listado usando apt.
+
+archivo="programas.txt"
+
+echo "Iniciando eliminación de programas listados en $archivo..."
+
+# Leer cada línea del archivo
+for i in $(cat "$archivo"); do
+  echo "Eliminando programa: $i ..."
+  sudo apt remove -y "$i"
+done
+
+# Limpiar paquetes huérfanos y dependencias innecesarias
+sudo apt autoremove -y
+
+echo "Proceso completado correctamente."
