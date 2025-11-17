@@ -1,0 +1,104 @@
+# Script: esthersp31-1lis.ps1
+# Descripción: Menú para listar eventos del sistema de Windows
+Clear-Host
+do {
+    Write-Host "MENÚ DE EVENTOS DEL SISTEMA"
+    Write-Host ""
+    Write-Host "1. Mostrar listado de eventos del sistema"
+    Write-Host "2. Mostrar errores del sistema del último mes"
+    Write-Host "3. Mostrar problemas de aplicaciones de esta semana (Warning)"
+    Write-Host "4. Salir"
+    Write-Host ""
+    
+    $opcion = Read-Host "Seleccione una opción (1-4)"
+    
+    switch ($opcion) {
+        '1' {
+            Write-Host ""
+            Write-Host "EVENTOS DEL SISTEMA"
+            Write-Host ""
+            
+            try {
+                Get-EventLog -LogName System -Newest 10 | 
+                    Select-Object TimeGenerated, EntryType, Source, EventID, Message |
+                    Format-Table -AutoSize -Wrap
+                
+                Write-Host "Total de eventos mostrados: 50"
+            }
+            catch {
+                Write-Host "Error al obtener eventos del sistema: $_"
+            }
+            
+            Write-Host ""
+            Read-Host "Presione Enter para continuar"
+        }
+        '2' {
+            Write-Host ""
+            Write-Host "ERRORES DEL SISTEMA - ÚLTIMO MES"
+            Write-Host ""
+            
+            try {
+                $fechaInicio = (Get-Date).AddMonths(-1)
+                $errores = Get-EventLog -LogName System -EntryType Error -After $fechaInicio
+                
+                if ($errores.Count -eq 0) {
+                    Write-Host "No se encontraron errores en el último mes."
+                }
+                else {
+                    $errores | Select-Object TimeGenerated, Source, EventID, Message |
+                        Format-Table -AutoSize -Wrap
+                    
+                    Write-Host "Total de errores encontrados: $($errores.Count)"
+                    Write-Host "Período: $fechaInicio hasta $(Get-Date)"
+                }
+            }
+            catch {
+                Write-Host "Error al obtener errores del sistema: $_"
+            }
+            
+            Write-Host ""
+            Read-Host "Presione Enter para continuar"
+        }
+        '3' {
+            Write-Host ""
+            Write-Host "ADVERTENCIAS DE APLICACIONES - ESTA SEMANA"
+            Write-Host ""
+            
+            try {
+                $hoy = Get-Date
+                $diaSemana = [int]$hoy.DayOfWeek
+                if ($diaSemana -eq 0) { $diaSemana = 7 }
+                $inicioSemana = $hoy.AddDays(-($diaSemana - 1)).Date
+                
+                $advertencias = Get-EventLog -LogName Application -EntryType Warning -After $inicioSemana
+                
+                if ($advertencias.Count -eq 0) {
+                    Write-Host "No se encontraron advertencias de aplicaciones en esta semana."
+                }
+                else {
+                    $advertencias | Select-Object TimeGenerated, Source, EventID, Message |
+                        Format-Table -AutoSize -Wrap
+                    
+                    Write-Host "Total de advertencias encontradas: $($advertencias.Count)"
+                    Write-Host "Período: $inicioSemana hasta $(Get-Date)"
+                }
+            }
+            catch {
+                Write-Host "Error al obtener advertencias de aplicaciones: $_"
+            }
+            
+            Write-Host ""
+            Read-Host "Presione Enter para continuar"
+        }
+        '4' {
+            Write-Host ""
+            Write-Host "Saliendo del programa..."
+            Start-Sleep -Seconds 1
+        }
+        default {
+            Write-Host ""
+            Write-Host "Opción no válida. Por favor, seleccione una opción entre 1 y 4."
+            Start-Sleep -Seconds 2
+        }
+    }
+} while ($opcion -ne '4')
