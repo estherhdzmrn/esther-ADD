@@ -1,0 +1,21 @@
+#!/bin/bash
+# Script: esthersp31-7log
+# Archivo de salida: se guarda en el directorio actual
+SALIDA="$(pwd)/errores_filtrados_$(date +%Y-%m-%d).log"
+
+# Vaciar o crear el archivo
+> "$SALIDA"
+
+# Recorre todos los archivos en /var/log
+for archivo in /var/log/*; do
+    if [ -f "$archivo" ]; then
+        resultado=$(grep -iE "error|fail" "$archivo" 2>/dev/null)
+        if [ -n "$resultado" ]; then
+            echo "===== Archivo: $archivo =====" >> "$SALIDA"
+            echo "$resultado" >> "$SALIDA"
+            echo "" >> "$SALIDA"
+        fi
+    fi
+done
+
+echo "Informe generado en: $SALIDA"
