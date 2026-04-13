@@ -144,9 +144,11 @@ do {
             Write-Host "Usuario '$samAccount' creado correctamente."
 
             # Mostrar grupos disponibles y asignar el usuario al indicado
-            Write-Host "Grupos disponibles en el dominio:"
-            Get-ADGroup -Filter * | Select-Object -ExpandProperty Name | ForEach-Object {
-                Write-Host "  $_"
+            $verGrupos = Read-Host "Quieres ver la lista de grupos disponibles? (s/n)"
+            if ($verGrupos -eq "s") {
+                Get-ADGroup -Filter * | Select-Object -ExpandProperty Name | ForEach-Object {
+                    Write-Host "  $_"
+                }
             }
             $nombreGrupo = Read-Host "Nombre del grupo al que asignar el usuario"
             Add-ADGroupMember -Identity $nombreGrupo -Members $samAccount
